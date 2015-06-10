@@ -11,11 +11,11 @@
 		<meta name="robots" content="index,follow" />
 		<meta name="keywords" content="ESUG smalltalk squeak pharo visualworks gemstone glass europe Membership" />
 		
-		<link rel="stylesheet" type="text/css" media="screen, projection" href="{{baseurl}}theme/screen.css" />
-		<link rel="stylesheet" type="text/css" media="print" href="{{baseurl}}theme/print.css" />
+		<link rel="stylesheet" type="text/css" media="screen, projection" href="/theme/screen.css" />
+		<link rel="stylesheet" type="text/css" media="print" href="/theme/print.css" />
 		<!--[if IE]><link rel="stylesheet" type="text/css" media="screen, projection" href="/wiki/files/PRBlueprintLibrary/ie.css"/><![endif]-->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-		<link rel="stylesheet" type="text/css" href="{{baseurl}}theme/pure.css" />
+		<link rel="stylesheet" type="text/css" href="/theme/pure.css" />
 		<link rel="canonical" href="http://esug.org/wiki/pier/About/membership" />
 		
 		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
@@ -27,30 +27,51 @@
 			<div class="header">
 				<div class="title">
 					<h1>
-						<a href="{{baseurl}}index.html"><img alt="{{site_news}}" style="height:100px" src="{{site_logo}}"></a>
+						<a href="/index.html"><img alt="" style="height:100px" src="http://placehold.it/200x200"></a>
 					</h1>
 				</div>
 				<div class="children">					
 					<ul>
-						{{#menu}}
+						
 						<li>
-							<a class="page" href="{{url}}">{{title}}</a>
+							<a class="page" href="/index.html">Home</a>
 						</li>
-						{{/menu}}
+						
+						<li>
+							<a class="page" href="/download.html">Download</a>
+						</li>
+						
+						<li>
+							<a class="page" href="/documentation/index.html">Documentation</a>
+						</li>
+						
 					</ul>
 				</div>
 				<div class="submenue">
 					<ul>
-						{{# subfiles }}
-						<li><a href="{{url}}">{{title}}</a></li>
-						{{/ subfiles }}
+						
 					</ul>
 				</div>
 				<div class="clear"></div>
 			</div>
 			<div class="body">
 				<div class="contents">
-					{{{content}}}
+					<section>
+<h2>Downloading TaskIT</h2>
+
+<p>
+A metacello configuration of TaskIT is available in smalltalkhub in TaskIT's repository, and Pharo's Metacello Repository. You can download version 1.0 of TaskIT evaluating the following code.
+</p>
+<p>
+<figure><pre><code>Gofer new 
+	smalltalkhubUser: 'sbragagnolo' project: 'TaskIT';
+	configuration;
+	loadVersion: '1.0'.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+This version is also available from Pharo's Configuration Browser.
+</p></section>
 				</div>
 			</div>
 		</div>

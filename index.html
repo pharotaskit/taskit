@@ -11,11 +11,11 @@
 		<meta name="robots" content="index,follow" />
 		<meta name="keywords" content="ESUG smalltalk squeak pharo visualworks gemstone glass europe Membership" />
 		
-		<link rel="stylesheet" type="text/css" media="screen, projection" href="theme/screen.css" />
-		<link rel="stylesheet" type="text/css" media="print" href="theme/print.css" />
+		<link rel="stylesheet" type="text/css" media="screen, projection" href="/theme/screen.css" />
+		<link rel="stylesheet" type="text/css" media="print" href="/theme/print.css" />
 		<!--[if IE]><link rel="stylesheet" type="text/css" media="screen, projection" href="/wiki/files/PRBlueprintLibrary/ie.css"/><![endif]-->
 		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css">
-		<link rel="stylesheet" type="text/css" href="theme/pure.css" />
+		<link rel="stylesheet" type="text/css" href="/theme/pure.css" />
 		<link rel="canonical" href="http://esug.org/wiki/pier/About/membership" />
 		
 		<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
@@ -27,18 +27,22 @@
 			<div class="header">
 				<div class="title">
 					<h1>
-						<a href="index.html"><img alt="" style="height:100px" src="http://placehold.it/200x200"></a>
+						<a href="/index.html"><img alt="" style="height:100px" src="http://placehold.it/200x200"></a>
 					</h1>
 				</div>
 				<div class="children">					
 					<ul>
 						
 						<li>
-							<a class="page" href="/martin.html">Home</a>
+							<a class="page" href="/index.html">Home</a>
 						</li>
 						
 						<li>
-							<a class="page" href="/blog.html">Blog</a>
+							<a class="page" href="/download.html">Download</a>
+						</li>
+						
+						<li>
+							<a class="page" href="/documentation/index.html">Documentation</a>
 						</li>
 						
 					</ul>
@@ -54,11 +58,136 @@
 				<div class="contents">
 					<section>
 <h1>TaskIT</h1>
-</section>
+
+<p>
+Expressing and managing concurrent computations is indeed a concern of importance to develop applications that scale. A web application may want to use different processes for each of its incoming requests. Or maybe it wants to use a &quot;thread pool&quot; in some cases. In other case, our desktop application may want to send computations to a worker to not block the UI thread. TaskIT is a library that eases the usage of processes in Pharo. It provides abstractions to schedule and/or parallelize of the execution of pieces of code.
+</p>
+<p>
+In this chapter we will explore the first version of TaskIT. We will at first familiarize the reader with the TaskIT abstractions, guided by examples and code snippets. At the end of the chapter we will discuss some of TaskIT extension points and possible customizations.
+</p>
+</section><section>
+<h1>Getting Started</h1>
+
+<p>
+In TaskIT A task is a first class representation of a piece of code to be executed, the main abstraction inside TaskIT. By reifying a task, TaskIT can paralellize it, start it and/or stop it whenever we want. A task is created from a block with a piece of code to be run. The result of the task's execution will be the result of its block. Additionally, we can specify a priority that will be used to decide the order of execution between it and other tasks. If we do not specify a priority explicitly, the default <code>userBackgroundPriority</code> defined in Pharo's <code>ProcessorScheduler</code> is used. We will discuss about the importance of a task's priority in the task runners' section. A task, instance of <code>TKTTask</code>, is created in the following way:
+</p>
+<p>
+<figure><pre><code>TKTTask for: [ someObject someMessage ].
+TKTTask for: [ someObject someMessage ] at: aPriority.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+Alternatively, blocks are extended to provided a nice syntax sugar to create tasks:
+</p>
+<p>
+<figure><pre><code>[ someObject someMessage ] asTask.
+[ someObject someMessage ] asTaskAt: aPriority.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+Tasks created in this way are not yet executed. We will discuss the different strategies for executing such tasks in the following sections.
+</p>
+<section>
+<h2>Executing a Task</h2>
+
+<p>
+The most basic way to execute a task is to run it as a one shoot task. A one shoot task is a task that is run in a new Pharo process. The Pharo process is discarded after the task is executed. To shoot a task we need to send it the message <code>shootIt</code>.
+</p>
+<p>
+<figure><pre><code>[ 2 +  2 ] asTask shootIt.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+or as well with the shortcut,
+</p>
+<p>
+<figure><pre><code>[ 2 + 2 ] shootIt.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+Tipically, the Pharo processes do not let us handle it's return value. The process is removed from the system once finished, forbidding us to obtain the result of it's execution. TaskIT provides us with a way to obtain the result of our processes in many different ways by using futures.
+</p>
+</section><section>
+<h2>Obtaining a task's result with futures</h2>
+
+<p>
+As the execution of a task can last some time, the immediate result of the <code>shootIt</code> message is a future object. A future object, instance of <code>TKTFuture</code>, is the promise of an execution's result. A future can hold the value of the finished execution, an error produced by the task execution, or neither if the task has not yet finished.
+</p>
+<p>
+<figure><pre><code>aFuture := [ 2 + 2 ] shootIt.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+Once we have a future in our hands, we can retrieve its value both synchronously and asynchronously, and interact with it in many forms.
+</p>
+<section>
+<h3>Synchronous result retrieval</h3>
+
+<p>
+The simplest way to interact with a future is synchronously. That is, when asking for a future's value, it will block the actual process until the value is available. We can do that by sending our future the message <code>value</code>.
+</p>
+<p>
+<figure><pre><code>future := [ 2 + 2 ] shootIt.
+self assert: future value equals: 4.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+However, it could have happened that the finished in an erroneous state, with an exception. In such case, the exception that was thrown inside the task's execution is forwarded to the sender of <code>value</code>.
+</p>
+<p>
+<figure><pre><code>future := [ SomeError signal ] shootIt.
+[ future value ] on: SomeError do: [ :error | &quot;We handle the error&quot; ].</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+A future can also tell us if the task is already finished or not, by sending it the message <code>isValueAvailable</code>. The <code>isValueAvailable</code> message, opposedly to the <code>value</code> message, will not block the caller's process but return immediately a boolean informing if the task has finished.
+</p>
+<p>
+<figure><pre><code>future := [ 2 + 2 ] shootIt.
+future isValueAvailable.</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+However, waiting synchronously or polling for the task to be finished can be a waste of CPU time sometimes. For those cases when completely synchronous execution does not fit, TaskIT provides an alternative of retrieving a value with a timeout option, using the <code>valueTimeoutMilliseconds:</code> message. When we specify a timeout, we can also provide a block to handle the timeout case using the <code>valueTimeoutMilliseconds:ifTimeout:</code>. If we choose not to provide such a block, the default behavior in case of timeout is to throw a <code>TKTTimeoutError</code> exception.
+</p>
+<p>
+<figure><pre><code>future := [ (Delay forMilliseconds: 100) wait ] shootIt.
+
+future
+    valueTimeoutMilliseconds: 2
+    ifTimeout: [ &quot;if it times out we execute this block&quot;].
+
+future valueTimeoutMilliseconds: 2.</code></pre><figcaption></figcaption></figure>
+
+</p>
+</section><section>
+<h3>Aynchronous result retrieval and callbacks</h3>
+
+<p>
+Support for asynchronous execution is provided via callbacks. A callback is a block with zero or one argument that will be executed when the task execution is finished. Futures accept callbacks for success and error of execution. On success, TaskIT will pass to the callback the result of the execution as argument. On the other side, when an error occurs during the task execution, TaskIT will execute the error callback with the exception object. A callback is represented by a <code>Block</code> object and configured for a future object via the <code>onSuccess:</code> and <code>onError:</code> messages. Note that callback arguments are optional, and many callbacks can be configured at the same time for the same future object.
+</p>
+<p class="comment">you should explain because this is strange to have the two onSuccess: following each other</p>
+<p>
+<figure><pre><code>future := [ 40000000 factorial ] shootIt.
+future onSuccess: [ 'Finished factorial and I dont care about the result' logCr ].
+
+future := [ 40000000 factorial ] shootIt.
+future onSuccess: [ :result | result logCr ].
+
+future := [ self error ] shootIt.
+future onError: [ 'An error ocurred!!' logCr ].
+
+future := [ self error ] shootIt.
+future onError: [ :exception | exception asString logCr ].</code></pre><figcaption></figcaption></figure>
+
+</p>
+<p>
+Callbacks handle transparently the finalization of a task. On the one hand, the callbacks registered while the task is running (and so, not yet finished) will be saved and executed when the task finishes on the process that executes the task. On the other hand, callbacks that are registered when the task has already finished will run synchronously in the caller process with the already available result.
+</p></section></section></section>
 				</div>
 			</div>
 		</div>
-		<div class="footer">
+		<div class="footer container-fluid">
 			<div class="madeby">
 				Pure theme powered by <a class="external" href="http://www.pharo.org">pharo</a> | <a class="external" href="http://www.smalltalkhub.com/#!/~Pier/Pillar">pillar</a> | <a class="external" href="http://www.smalltalkhub.com/#!/~StephaneDucasse/Ecstatic">Ecstatic</a>
 			</div>
