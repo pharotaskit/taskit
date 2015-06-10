@@ -1,0 +1,12 @@
+!!Downloading TaskIT
+
+A metacello configuration of TaskIT is available in smalltalkhub in TaskIT's repository, and Pharo's Metacello Repository. You can download version 1.0 of TaskIT evaluating the following code.
+
+[[[
+Gofer new 
+	smalltalkhubUser: 'sbragagnolo' project: 'TaskIT';
+	configuration;
+	loadVersion: '1.0'.
+]]]
+
+This version is also available from Pharo's Configuration Browser.
